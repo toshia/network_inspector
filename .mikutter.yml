@@ -1,0 +1,9 @@
+---
+slug: :network_inspector
+depends:
+  mikutter: '3.5'
+  plugin: [gtk]
+version: '1.0'
+author: toshi_a
+name: Network Inspector
+description: mikutter が行った通信を全てダンプします。調査用に
