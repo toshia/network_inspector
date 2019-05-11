@@ -89,8 +89,8 @@ Plugin.create(:network_inspector) do
                attach(ni_hscrollbar, 0, 1, 1, 2, ::Gtk::SHRINK|::Gtk::FILL, ::Gtk::FILL),
           true, true).
     pack2(ni_detail_view.add_with_viewport(::Gtk::VBox.new.
-                                  closeup(ni_description).
-                                  closeup(ni_status.right)), true, false)
+                                             closeup(ni_status.left).
+                                             closeup(ni_description)), true, false)
 
   tab(:network_inspector) do
     set_icon File.join(File.dirname(__FILE__), 'icon.png')
@@ -100,12 +100,12 @@ Plugin.create(:network_inspector) do
   ni_view.ssc("cursor-changed") { |this|
     iter = this.selection.selected
     if iter
-      ni_description.rewind(iter[NetworkInspectorView::ENDPOINT])
+      ni_status.set_text(iter[NetworkInspectorView::ENDPOINT])
 
       event = iter[NetworkInspectorView::EVENT]
       ratelimit = event[:ratelimit]
       if iter[NetworkInspectorView::EVENT][:res]
-        ni_status.set_text Plugin::NetworkInspector::PROPERTY_TEXT % {
+        ni_description.rewind Plugin::NetworkInspector::PROPERTY_TEXT % {
           progress: iter[NetworkInspectorView::PROGRESS],
           endpoint: iter[NetworkInspectorView::ENDPOINT],
           method: event[:method],
@@ -119,7 +119,7 @@ Plugin.create(:network_inspector) do
           code: event[:res].code,
           body: JSON.pretty_generate(JSON.parse(event[:res].body)) }
       else
-        ni_status.set_text Plugin::NetworkInspector::PROPERTY_TEXT % {
+        ni_description.rewind Plugin::NetworkInspector::PROPERTY_TEXT % {
           progress: iter[NetworkInspectorView::PROGRESS],
           endpoint: iter[NetworkInspectorView::ENDPOINT],
           method: event[:method],
@@ -135,11 +135,11 @@ Plugin.create(:network_inspector) do
     false
   }
 
-  def icon_by_mikutwitter(mikutwitter)
-    type_strict mikutwitter => MikuTwitter
-    service = Service.find{ |s| s.twitter == mikutwitter }
-    if service
-      service.user_obj.icon end end
+  # def icon_by_mikutwitter(mikutwitter)
+  #   type_strict mikutwitter => MikuTwitter
+  #   service = Service.find{ |s| s.twitter == mikutwitter }
+  #   if service
+  #     service.user_obj.icon end end
 
   progressing_iter = {}
 
@@ -147,13 +147,13 @@ Plugin.create(:network_inspector) do
     ni_view.scroll_to_zero_lator! if ni_view.realized? and ni_view.vadjustment.value == 0.0
     iter = ni_view.model.prepend
     progressing_iter[params[:serial]] = iter
-    icon = icon_by_mikutwitter(params[:mikutwitter])
+    icon = nil # icon_by_mikutwitter(params[:mikutwitter])
     if icon
       iter[NetworkInspectorView::ICON] = icon.pixbuf(width: 24, height: 24){ |loaded_icon|
         iter[NetworkInspectorView::ICON] = loaded_icon }
     end
     iter[NetworkInspectorView::PROGRESS] = 'con.'.freeze
-    iter[NetworkInspectorView::ENDPOINT] = params[:path]
+    iter[NetworkInspectorView::ENDPOINT] = params[:path].to_s
     iter[NetworkInspectorView::START_TIME] = params[:start_time].to_s
     iter[NetworkInspectorView::ID] = params[:serial]
     iter[NetworkInspectorView::EVENT] = params
